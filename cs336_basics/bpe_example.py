@@ -36,7 +36,7 @@ def string_to_tuple_of_bytes(string: str) -> tuple[bytes,...]:
 def get_pairs_in_a_word(word: tuple[bytes,...]) -> tuple[tuple[bytes,bytes],...]:
     return tuple(list(zip(word, word[1:])))
 
-def collect_frequency_table():
+def collect_word_freq_table():
     for word in corpus.split():
         word_tuple_of_bytes = string_to_tuple_of_bytes(word)
         if ( word_tuple_of_bytes in word_frequency_table):
@@ -44,16 +44,18 @@ def collect_frequency_table():
         else:
             word_frequency_table[word_tuple_of_bytes] = 1
 
-def get_comb_freq_table_from_word_freq_table():
-    for word in word_frequency_table:
+def get_comb_freq_table_from_word_freq_table(word_freq_table : dict[tuple[bytes, ...],int]):
+    comb_freq_table : dict[tuple[bytes, bytes], int] = {}
+    for word in word_freq_table:
         for pair in get_pairs_in_a_word(word):
-            if pair in combination_frequency_table:
-                combination_frequency_table[pair] += word_frequency_table[word]
+            if pair in comb_freq_table:
+                comb_freq_table[pair] += word_freq_table[word]
             else:
-                combination_frequency_table[pair] = word_frequency_table[word]
+                comb_freq_table[pair] = word_freq_table[word]
+    return comb_freq_table
 
-def get_max_pair() -> tuple[int, tuple[bytes,bytes]]:
-    return max(list(zip(combination_frequency_table.values(),combination_frequency_table)))
+def get_max_pair(comb_freq_table : dict[tuple[bytes, bytes], int]) -> tuple[int, tuple[bytes,bytes]]:
+    return max(list(zip(comb_freq_table.values(),comb_freq_table)))
 
 def merge_word(word : tuple[bytes,...], pair : tuple[bytes, bytes]) -> tuple[bytes,...]:
     new_word_list = []
@@ -81,30 +83,31 @@ def on_merge_add_word_to_vocab_and_merges(new_pair : tuple[bytes,bytes]):
     vocabulary[len(vocabulary)] = new_pair[0] + new_pair[1]
     merges.append(new_pair)
 
-def on_merge_update_word_frequency_table():
+def on_merge_update_word_frequency_table(word_freq_table : dict[tuple[bytes,...],int], merge : tuple[bytes,bytes]):
     old_words : list[tuple[bytes,...]] = []
     new_words : list[tuple[bytes,...]] = []
 
-    for word in word_frequency_table:
-        new_word = merge_word(word,merges[-1])
+    for word in word_freq_table:
+        new_word = merge_word(word,merge)
         new_words.append(new_word)
         old_words.append(word)
 
     for new_word, old_word in zip(new_words,old_words):
         if new_word != old_word:
-            word_frequency_table[new_word] = word_frequency_table[old_word]
-            del word_frequency_table[old_word]
+            word_freq_table[new_word] = word_freq_table[old_word]
+            del word_freq_table[old_word]
 
-collect_frequency_table()
-# print(word_frequency_table)
+if __name__ == "__main__":
+    collect_word_freq_table()
+    # print(word_frequency_table)
 
-for i in range(6):
+    for i in range(6):
 
-    get_comb_freq_table_from_word_freq_table()
-    # print("word:",word_frequency_table)
-    # print("comb:",combination_frequency_table)
-    on_merge_add_word_to_vocab_and_merges(get_max_pair()[1])
-    on_merge_update_word_frequency_table()
-    combination_frequency_table.clear()
+        combination_frequency_table = get_comb_freq_table_from_word_freq_table(word_frequency_table)
+        # print("word:",word_frequency_table)
+        # print("comb:",combination_frequency_table)
+        on_merge_add_word_to_vocab_and_merges(get_max_pair(combination_frequency_table)[1])
+        on_merge_update_word_frequency_table()
+        combination_frequency_table.clear()
 
-print(merges)
+    print(merges)

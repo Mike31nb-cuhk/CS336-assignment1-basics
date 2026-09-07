@@ -9,8 +9,9 @@ import torch
 from jaxtyping import Bool, Float, Int
 from torch import Tensor
 
-from cs336_basics import train_bpe
-from cs336_basics import bpe_tokenizer
+from cs336_basics.Tokenizer import bpe_tokenizer, train_bpe
+from cs336_basics.Transformer_Modules import Linear_Module,Embedding_Module
+
 
 def run_linear(
     d_in: int,
@@ -31,7 +32,9 @@ def run_linear(
         Float[Tensor, "... d_out"]: The transformed output of your linear module.
     """
 
-    raise NotImplementedError
+    Linear_Module_Instance = Linear_Module.Linear(d_in, d_out, )
+    Linear_Module_Instance.load_state_dict({"weight":weights})
+    return Linear_Module_Instance.foward(in_features)
 
 
 def run_embedding(
@@ -52,6 +55,10 @@ def run_embedding(
     Returns:
         Float[Tensor, "... d_model"]: Batch of embeddings returned by your Embedding layer.
     """
+    Embedding_Module_Instance = Embedding_Module.Embedding(vocab_size, d_model)
+    Embedding_Module_Instance.load_state_dict({"embedding_weight":weights})
+    return Embedding_Module_Instance.foward(token_ids)
+
 
     raise NotImplementedError
 
@@ -562,7 +569,7 @@ def get_tokenizer(
     Returns:
         A BPE tokenizer that uses the provided vocab, merges, and special tokens.
     """
-    return bpe_tokenizer.tokenizer(vocab,merges,special_tokens)
+    return bpe_tokenizer.tokenizer(vocab, merges, special_tokens)
 
 
 def run_train_bpe(
@@ -592,4 +599,4 @@ def run_train_bpe(
                 representing that <token1> was merged with <token2>.
                 Merges are ordered by order of creation.
     """
-    return train_bpe.run_train_bpe(input_path,vocab_size,special_tokens)
+    return train_bpe.run_train_bpe(input_path, vocab_size, special_tokens)

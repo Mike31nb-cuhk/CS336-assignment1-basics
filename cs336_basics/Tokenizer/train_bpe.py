@@ -3,7 +3,7 @@ import time
 import regex as re
 import pickle
 
-from cs336_basics import bpe_example
+from cs336_basics.Tokenizer import bpe_example
 
 
 def run_train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) \
@@ -60,7 +60,7 @@ def run_train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) \
         merges.append(new_pair)
 
         # on merge: update word frequency table
-        bpe_example.on_merge_update_word_frequency_table(word_frequency_table,new_pair)
+        bpe_example.on_merge_update_word_frequency_table(word_frequency_table, new_pair)
 
         continue
 
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     start_time = time.perf_counter()
 
     vocabulary_dict, merge_list = run_train_bpe(
-        "/home/mike31nb/Projects/CS336/assignment1-basics/data/owt_train.txt", 32000, ["<|endoftext|>"])
+        "/data/owt_train.txt", 32000, ["<|endoftext|>"])
 
     # serialization in two ways.
     # 1. pickle, perfect encodings, no damage risk

@@ -1,12 +1,12 @@
 import regex as re
 import pickle
-from cs336_basics import bpe_example
+from cs336_basics.Tokenizer import bpe_example
 
 special_tokens = ["<|endoftext|>"]
 
-with open("/home/mike31nb/Projects/CS336/assignment1-basics/data/merges.pkl", "rb") as f:
+with open("/data/merges.pkl", "rb") as f:
     merges = pickle.load(f)
-with open("/home/mike31nb/Projects/CS336/assignment1-basics/data/vocabulary.pkl", "rb") as f:
+with open("/data/vocabulary.pkl", "rb") as f:
     vocabulary = pickle.load(f)
 
 inverse_vocab = {v : k for k,v in vocabulary.items()}
@@ -32,7 +32,7 @@ def encoding(corpus : str) -> list[int]:
                 word = bpe_example.string_to_tuple_of_bytes(word[0])
                 # word is merged tuple of bytes
                 for pair in merges:
-                    word = bpe_example.merge_word(word,pair)
+                    word = bpe_example.merge_word(word, pair)
                 # add tuple of bytes as word into words
                 new_words.append(word)
     # word_to_index

@@ -1,5 +1,4 @@
 # defines linear module
-from math import sqrt
 
 import torch
 from torch import nn

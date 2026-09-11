@@ -1,5 +1,5 @@
 # defines linear module
-
+from math import sqrt
 import torch
 from torch import nn
 from einops import rearrange, einsum
@@ -14,6 +14,6 @@ class Linear(nn.Module):
         nn.init.trunc_normal_(self.weight,0,std,-3*std,3*std)
 
 
-    def foward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         y = einsum(x, self.weight, "... d_in, d_out d_in -> ... d_out")
         return y

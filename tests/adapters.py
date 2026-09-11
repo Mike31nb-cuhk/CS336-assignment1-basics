@@ -10,7 +10,11 @@ from jaxtyping import Bool, Float, Int
 from torch import Tensor
 
 from cs336_basics.Tokenizer import bpe_tokenizer, train_bpe
-from cs336_basics.Transformer_Modules import Linear_Module,Embedding_Module, RMS_Norm_Module
+from cs336_basics.Transformer_Modules import Linear_Module, Embedding_Module, RMS_Norm_Module, RoPE_Module, \
+    Positionwise_Feedforward_Network_Module, Softmax, Scaled_Dot_Product_Attention, Transformer_Block_Module, \
+    Transformer_LM_Module
+from cs336_basics.Transformer_Modules.MultiHead_Self_Attention import MultiheadSelfAttention
+
 
 def run_linear(
     d_in: int,
@@ -33,7 +37,7 @@ def run_linear(
 
     Linear_Module_Instance = Linear_Module.Linear(d_in, d_out, )
     Linear_Module_Instance.load_state_dict({"weight":weights})
-    return Linear_Module_Instance.foward(in_features)
+    return Linear_Module_Instance.forward(in_features)
 
 
 def run_embedding(
@@ -56,10 +60,7 @@ def run_embedding(
     """
     Embedding_Module_Instance = Embedding_Module.Embedding(vocab_size, d_model)
     Embedding_Module_Instance.load_state_dict({"embedding_weight":weights})
-    return Embedding_Module_Instance.foward(token_ids)
-
-
-    raise NotImplementedError
+    return Embedding_Module_Instance.forward(token_ids)
 
 
 def run_swiglu(
@@ -91,7 +92,12 @@ def run_swiglu(
     # swiglu.w1.weight.data = w1_weight
     # swiglu.w2.weight.data = w2_weight
     # swiglu.w3.weight.data = w3_weight
-    raise NotImplementedError
+
+    PWFFN_Instance = Positionwise_Feedforward_Network_Module.PositionwiseFeedforwardNetwork(d_model, d_ff)
+    PWFFN_Instance.Linear1.load_state_dict({"weight":w1_weight})
+    PWFFN_Instance.Linear2.load_state_dict({"weight":w2_weight})
+    PWFFN_Instance.Linear3.load_state_dict({"weight":w3_weight})
+    return PWFFN_Instance.forward(in_features)
 
 
 def run_scaled_dot_product_attention(
@@ -112,7 +118,7 @@ def run_scaled_dot_product_attention(
     Returns:
         Float[Tensor, " ... queries d_v"]: Output of SDPA
     """
-    raise NotImplementedError
+    return Scaled_Dot_Product_Attention.scaled_dot_product_attention(Q, K, V, mask)
 
 
 def run_multihead_self_attention(
@@ -146,8 +152,13 @@ def run_multihead_self_attention(
         Float[Tensor, " ... sequence_length d_model"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
 
+    MultiheadSelfAttentionInstance = MultiheadSelfAttention(d_model,num_heads,False)
+    MultiheadSelfAttentionInstance.WQ.load_state_dict({"weight":q_proj_weight})
+    MultiheadSelfAttentionInstance.Linear_K.load_state_dict({"weight":k_proj_weight})
+    MultiheadSelfAttentionInstance.Linear_V.load_state_dict({"weight":v_proj_weight})
+    MultiheadSelfAttentionInstance.Linear_O.load_state_dict({"weight":o_proj_weight})
+    return MultiheadSelfAttentionInstance.forward(in_features)
 
 def run_multihead_self_attention_with_rope(
     d_model: int,
@@ -186,7 +197,14 @@ def run_multihead_self_attention_with_rope(
         Float[Tensor, " ... sequence_length d_model"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+
+    MultiheadSelfAttentionInstance = MultiheadSelfAttention(d_model,num_heads,True,theta, max_seq_len)
+    MultiheadSelfAttentionInstance.WQ.load_state_dict({"weight":q_proj_weight})
+    MultiheadSelfAttentionInstance.Linear_K.load_state_dict({"weight":k_proj_weight})
+    MultiheadSelfAttentionInstance.Linear_V.load_state_dict({"weight":v_proj_weight})
+    MultiheadSelfAttentionInstance.Linear_O.load_state_dict({"weight":o_proj_weight})
+    return MultiheadSelfAttentionInstance.forward(in_features,token_positions)
+
 
 
 def run_rope(
@@ -208,7 +226,10 @@ def run_rope(
     Returns:
         Float[Tensor, " ... sequence_length d_k"]: Tensor with RoPEd input.
     """
-    raise NotImplementedError
+
+
+    Rope_Module_Instance = RoPE_Module.RoPE(theta,d_k,max_seq_len)
+    return Rope_Module_Instance.forward(in_query_or_key, token_positions)
 
 
 def run_transformer_block(
@@ -281,7 +302,18 @@ def run_transformer_block(
         Float[Tensor, "batch sequence_length d_model"] Tensor with the output of
         running the Transformer block on the input features while using RoPE.
     """
-    raise NotImplementedError
+
+    Transformer_Block_Instance = Transformer_Block_Module.TransformerBlockModule(d_model,num_heads,d_ff,theta,max_seq_len)
+    Transformer_Block_Instance.MultiheadSelfAttention.Linear_Q.load_state_dict({"weight": weights["attn.q_proj.weight"]})
+    Transformer_Block_Instance.MultiheadSelfAttention.Linear_K.load_state_dict({"weight": weights["attn.k_proj.weight"]})
+    Transformer_Block_Instance.MultiheadSelfAttention.Linear_V.load_state_dict({"weight": weights["attn.v_proj.weight"]})
+    Transformer_Block_Instance.MultiheadSelfAttention.Linear_O.load_state_dict({"weight": weights["attn.output_proj.weight"]})
+    Transformer_Block_Instance.RMSNorm_MHSA.load_state_dict({"g": weights["ln1.weight"]})
+    Transformer_Block_Instance.RMSNorm_PWFFN.load_state_dict({"g": weights["ln2.weight"]})
+    Transformer_Block_Instance.PositionwiseFeedforwardNetwork.Linear1.load_state_dict({"weight": weights["ffn.w1.weight"]})
+    Transformer_Block_Instance.PositionwiseFeedforwardNetwork.Linear2.load_state_dict({"weight": weights["ffn.w2.weight"]})
+    Transformer_Block_Instance.PositionwiseFeedforwardNetwork.Linear3.load_state_dict({"weight": weights["ffn.w3.weight"]})
+    return Transformer_Block_Instance.forward(in_features)
 
 
 def run_transformer_lm(
@@ -363,7 +395,29 @@ def run_transformer_lm(
         Float[Tensor, "batch_size sequence_length vocab_size"]: Tensor with the predicted unnormalized
         next-word distribution for each token.
     """
-    raise NotImplementedError
+
+    Transformer_LM_Instance = Transformer_LM_Module.TransformerLM(d_model,num_heads,d_ff, rope_theta,context_length,vocab_size,num_layers)
+    # load weights
+    Transformer_LM_Instance.Embedding.load_state_dict({"embedding_weight":weights["token_embeddings.weight"]})
+    Transformer_LM_Instance.Final_RMSNorm.load_state_dict({"g":weights["ln_final.weight"]})
+    Transformer_LM_Instance.LM_Head.load_state_dict({"weight":weights["lm_head.weight"]})
+
+    # load weights for Transformer Blocks
+    for i in range(num_layers):
+        Transformer_Block_Instance = Transformer_LM_Instance.TransformerBlocks[i]
+        Transformer_Block_Instance.MultiheadSelfAttention.Linear_Q.load_state_dict({"weight": weights[f"layers.{i}.attn.q_proj.weight"]})
+        Transformer_Block_Instance.MultiheadSelfAttention.Linear_K.load_state_dict({"weight": weights[f"layers.{i}.attn.k_proj.weight"]})
+        Transformer_Block_Instance.MultiheadSelfAttention.Linear_V.load_state_dict({"weight": weights[f"layers.{i}.attn.v_proj.weight"]})
+        Transformer_Block_Instance.MultiheadSelfAttention.Linear_O.load_state_dict({"weight": weights[f"layers.{i}.attn.output_proj.weight"]})
+        Transformer_Block_Instance.RMSNorm_MHSA.load_state_dict({"g": weights[f"layers.{i}.ln1.weight"]})
+        Transformer_Block_Instance.RMSNorm_PWFFN.load_state_dict({"g": weights[f"layers.{i}.ln2.weight"]})
+        Transformer_Block_Instance.PositionwiseFeedforwardNetwork.Linear1.load_state_dict({"weight": weights[f"layers.{i}.ffn.w1.weight"]})
+        Transformer_Block_Instance.PositionwiseFeedforwardNetwork.Linear2.load_state_dict({"weight": weights[f"layers.{i}.ffn.w2.weight"]})
+        Transformer_Block_Instance.PositionwiseFeedforwardNetwork.Linear3.load_state_dict({"weight": weights[f"layers.{i}.ffn.w3.weight"]})
+
+
+    # calculate
+    return Transformer_LM_Instance.forward(in_indices)
 
 
 def run_rmsnorm(
@@ -387,7 +441,7 @@ def run_rmsnorm(
         RMSNorm of the `in_features`.
     """
 
-    RMS_Norm_Module_Instance = RMS_Norm_Module.RMS_Norm(d_model, eps)
+    RMS_Norm_Module_Instance = RMS_Norm_Module.RMSNorm(d_model, eps)
     RMS_Norm_Module_Instance.load_state_dict({"g":weights})
 
     return RMS_Norm_Module_Instance.forward(in_features)
@@ -443,7 +497,7 @@ def run_softmax(in_features: Float[Tensor, " ..."], dim: int) -> Float[Tensor, "
         Float[Tensor, "..."]: Tensor of with the same shape as `in_features` with the output of
         softmax normalizing the specified `dim`.
     """
-    raise NotImplementedError
+    return Softmax.softmax(in_features, dim)
 
 
 def run_cross_entropy(

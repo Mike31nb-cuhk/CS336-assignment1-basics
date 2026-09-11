@@ -1,15 +1,12 @@
 # defines RMS Normalization module
-from math import sqrt
 
 import torch
-from sympy import true
 from torch import nn
-from einops import rearrange, einsum
 
 from tests.conftest import d_model
 
 
-class RMS_Norm(nn.Module):
+class RMSNorm(nn.Module):
 
     def __init__(self, d_model: int, eps: float = 1e-5, device=None, dtype=None):
         super().__init__()

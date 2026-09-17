@@ -12,8 +12,10 @@ class RoPE(nn.Module):
         k = 2*k/ d_k
         angle_table_at_i_is_1 = 1 / (theta ** k)
         self.theta_table = einsum(angle_table_at_i_is_1, i, "rot_pairs, max_seq_len -> max_seq_len rot_pairs")
-        self.sin_table = torch.sin(self.theta_table)
-        self.cos_table = torch.cos(self.theta_table)
+        sin_table = torch.sin(self.theta_table)
+        self.register_buffer("sin_table",sin_table)
+        cos_table = torch.cos(self.theta_table)
+        self.register_buffer("cos_table",cos_table)
 
     def forward(self, x: torch.Tensor, token_positions: torch.Tensor) -> torch.Tensor:
         a = x[..., 0::2]

@@ -19,6 +19,8 @@ class MultiheadSelfAttention(nn.Module):
         self.Linear_K = Linear(d_model, d_model)
         self.Linear_V = Linear(d_model, d_model)
         self.Linear_O = Linear(d_model, d_model)
+        mask = None
+        self.register_buffer("mask", mask)
         if apply_rope:
             self.RoPE = RoPE(theta,self.d_k,max_seq_len)
 
@@ -40,7 +42,7 @@ class MultiheadSelfAttention(nn.Module):
 
 
         # Masking
-        mask = torch.tril(torch.ones(seq_len,seq_len,dtype=torch.bool))
-        A = scaled_dot_product_attention(Q, K, V, mask)
+        self.mask = torch.tril(torch.ones(seq_len,seq_len,dtype=torch.bool,device=in_features.device))
+        A = scaled_dot_product_attention(Q, K, V, self.mask)
         A = rearrange(A,"... num_heads seq_length d_k -> ... seq_length (num_heads d_k)")
         return self.Linear_O.forward(A)

@@ -99,7 +99,7 @@ if __name__ == "__main__":
     start_time = time.perf_counter()
 
     vocabulary_dict, merge_list = run_train_bpe(
-        "/data/owt_train.txt", 32000, ["<|endoftext|>"])
+        "data/owt_train.txt", 10000, ["<|endoftext|>"])
 
     # serialization in two ways.
     # 1. pickle, perfect encodings, no damage risk

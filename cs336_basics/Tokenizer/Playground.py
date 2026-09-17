@@ -3,15 +3,15 @@ import time
 import cs336_basics.Tokenizer.bpe_tokenizer
 import numpy as np
 
-with open("/data/merges.pkl", "rb") as f:
+with open("data/merges.pkl", "rb") as f:
     merges = pickle.load(f)
-with open("/data/vocabulary.pkl", "rb") as f:
+with open("data/vocabulary.pkl", "rb") as f:
     vocabulary = pickle.load(f)
-with open("/data/TinyStoriesV2-GPT4-valid.txt", "r") as f:
+with open("data/TinyStoriesV2-GPT4-valid.txt", "r") as f:
     tiny_story = f.read()
 
 def see_tiny_story():
-    with open("/data/OpenWebTextIndicies.pkl", "rb") as f:
+    with open("data/OpenWebTextIndicies.pkl", "rb") as f:
         return pickle.load(f)
 
 def encode_tiny_story():
@@ -25,6 +25,16 @@ def encode_tiny_story():
     np_array = np.array(output,dtype=np.uint16)
     with open("/data/OpenWebTextIndicies.pkl", "wb") as f:  # 注意 "wb"——二进制写
         pickle.dump(np_array, f)
+
+def tokenizer_tiny_story_iter():
+    articles = tiny_story.split("<|endoftext|>")
+    output = []
+    tokenizer = cs336_basics.Tokenizer.bpe_tokenizer.tokenizer(vocabulary, merges, ["<|endoftext|>"])
+
+    for index in tokenizer.encode_iterable(articles):
+        output.append(index)
+    return output
+
 def tokenizer_performance_analysis_iter():
 
     start_time = time.perf_counter()

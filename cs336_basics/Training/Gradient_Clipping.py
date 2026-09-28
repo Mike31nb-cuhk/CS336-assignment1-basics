@@ -2,7 +2,7 @@ from math import sqrt
 
 import torch
 
-def gradient_clipping(param, l2_norm_max, epsilon = 10e-6):
+def gradient_clipping(param, l2_norm_max=1.0, epsilon = 1e-6):
     l2_norm_squared = 0
 
     for p in param:

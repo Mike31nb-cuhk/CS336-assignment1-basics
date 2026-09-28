@@ -1,5 +1,8 @@
 import pickle
 import time
+
+from sympy import true
+
 import cs336_basics.Tokenizer.bpe_tokenizer
 import numpy as np
 
@@ -7,7 +10,7 @@ with open("data/merges.pkl", "rb") as f:
     merges = pickle.load(f)
 with open("data/vocabulary.pkl", "rb") as f:
     vocabulary = pickle.load(f)
-with open("data/TinyStoriesV2-GPT4-valid.txt", "r") as f:
+with open("data/TinyStoriesV2-GPT4-train.txt", "r") as f:
     tiny_story = f.read()
 
 def see_tiny_story():
@@ -26,13 +29,35 @@ def encode_tiny_story():
     with open("/data/OpenWebTextIndicies.pkl", "wb") as f:  # 注意 "wb"——二进制写
         pickle.dump(np_array, f)
 
-def tokenizer_tiny_story_iter():
+def tokenizer_tiny_story_iter(valid_set = False,example = False):
+    start_time = time.perf_counter()
+
+    if valid_set:
+        if example:
+            with open("data/TinyStories_Example.txt", "r") as f:
+                tiny_story = f.read()
+        else:
+            with open("data/TinyStoriesV2-GPT4-valid.txt", "r") as f:
+                tiny_story = f.read()
+    else:
+        with open("data/TinyStoriesV2-GPT4-train.txt", "r") as f:
+            tiny_story = f.read()
+
     articles = tiny_story.split("<|endoftext|>")
+    if articles[-1] == '':
+        del articles[-1]
     output = []
     tokenizer = cs336_basics.Tokenizer.bpe_tokenizer.tokenizer(vocabulary, merges, ["<|endoftext|>"])
 
-    for index in tokenizer.encode_iterable(articles):
-        output.append(index)
+
+    for i, index in enumerate(tokenizer.encode_iterable_return_in_list(articles)):
+        output.extend(index)
+        output.append(256)
+        if i % 10000 == 0:
+            end_time = time.perf_counter()
+            elapsed_time = (end_time - start_time)
+            print("time :" + str(elapsed_time) + "   stories tokenized: " + str(i))
+
     return output
 
 def tokenizer_performance_analysis_iter():
@@ -122,4 +147,5 @@ def tokenizer_performance_analysis_naive():
     print(825*1024*1024*1024 / (len(total_text.encode("utf-8")) /elapsed_time))
 
 if __name__ == "__main__":
-    OpenWebTextIndicies = see_tiny_story()
+    output = tokenizer_tiny_story_iter(true,true)
+    print(output)

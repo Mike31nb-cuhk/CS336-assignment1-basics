@@ -6,7 +6,7 @@ import torch
 
 
 class Adam(torch.optim.Optimizer):
-    def __init__(self, params, lr=1e-3, weight_decay = 0.99,  betas = (0.9,0.999), eps=1e-8):
+    def __init__(self, params, lr=1e-3, weight_decay = 0.1,  betas = (0.9,0.95), eps=1e-8):
         if lr < 0:
             raise ValueError(f"Invalid learning rate: {lr}")
 

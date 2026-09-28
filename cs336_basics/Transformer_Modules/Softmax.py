@@ -2,7 +2,8 @@ import torch
 from torch import nn
 from einops import rearrange, einsum
 
-def softmax(input_tensor : torch.Tensor, dimension : int):
+def softmax(input_tensor : torch.Tensor, dimension : int = -1, temperature : float = 1):
+    input_tensor = input_tensor / temperature
     max_entry = torch.max(input_tensor,dim = dimension,keepdim=True).values
     # print("input entry shape!! :")
     # print(input_tensor.shape)
